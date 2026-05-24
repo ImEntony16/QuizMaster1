@@ -1,28 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';  // БЕЗ services/
-import '../pages/auth_gate.dart';  // ДОДАЛИ ../
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:quizmaster/pages/home_page.dart';
+import 'package:quizmaster/pages/auth_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Перевіряємо чи Firebase вже ініціалізовано
-  if (Firebase.apps.isEmpty) {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-  }git init
-  git add .
-  git commit -m "Initial commit"
-  git branch -M main
-  git remote add origin https://github.com/ImEntony16/QuizMaster1.git
-  git push -u origin main
+  await Firebase.initializeApp(
+    options: const FirebaseOptions(
+      apiKey: 'AIzaSyCu2rm8PLWaieuPn3gdYHqgcWSBamKUdWo',
+      appId: '1:192803325042:android:c6f9da9829307ec20beeeb',
+      messagingSenderId: '192803325042',
+      projectId: 'quizmaster-870c0',
+      storageBucket: 'quizmaster-870c0.firebasestorage.app',
+    ),
+  );
 
-  runApp(const QuizMasterApp());
+  runApp(const MyApp());
 }
 
-class QuizMasterApp extends StatelessWidget {
-  const QuizMasterApp({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -31,32 +30,40 @@ class QuizMasterApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF6C63FF),
-          brightness: Brightness.light,
-        ),
-        cardTheme: CardThemeData(
+        brightness: Brightness.light,
+        scaffoldBackgroundColor: const Color(0xFFF5F4FA),
+        cardColor: Colors.white,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.white,
+          foregroundColor: Color(0xFF1A1A1A),
           elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
+        ),
+        textTheme: const TextTheme(
+          bodyLarge: TextStyle(color: Color(0xFF1A1A1A)),
+          bodyMedium: TextStyle(color: Color(0xFF2D2D2D)),
         ),
       ),
-      darkTheme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF6C63FF),
-          brightness: Brightness.dark,
-        ),
-        cardTheme: CardThemeData(
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-        ),
+
+      // Розумний запуск додатку: перевіряємо чи авторизований користувач
+      home: StreamBuilder<User?>(
+        stream: FirebaseAuth.instance.authStateChanges(),
+        builder: (context, snapshot) {
+          // Поки Firebase перевіряє токен сесії — показуємо індикатор завантаження
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator(color: Colors.deepPurple)),
+            );
+          }
+
+          // Якщо користувач успішно зайшов в акаунт — відкриваємо головне меню
+          if (snapshot.hasData && snapshot.data != null) {
+            return const HomePage();
+          }
+
+          // Якщо користувач вийшов або не авторизований — показуємо екран логіну
+          return const AuthPage(); // Якщо твій клас називається LoginPage, зміни на const LoginPage()
+        },
       ),
-      themeMode: ThemeMode.system,
-      home: const AuthGate(),
     );
   }
 }

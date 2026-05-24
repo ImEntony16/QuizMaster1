@@ -1,289 +1,255 @@
 import 'package:flutter/material.dart';
-import '../services/firestore_service.dart';
-import '../models/user_model.dart';
-
-
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class LeaderboardPage extends StatelessWidget {
   const LeaderboardPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final firestoreService = FirestoreService();
+    final user = FirebaseAuth.instance.currentUser;
+    final db = FirebaseFirestore.instance;
 
-    return FutureBuilder<void>(
-      // разово насіваємо фейкових юзерів (якщо ще пусто)
-      future: firestoreService.seedDummyUsers(count: 15),
-      builder: (context, _) {
-        return StreamBuilder<List<UserProfile>>(
-          stream: firestoreService.getTopUsers(limit: 20),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Scaffold(
-                body: Center(child: CircularProgressIndicator()),
-              );
-            }
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'Моя статистика',
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+        backgroundColor: Colors.blueAccent,
+        centerTitle: true,
+      ),
+      body: StreamBuilder<DocumentSnapshot>(
+        stream: db.collection('users').doc(user?.uid).snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-            if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return Scaffold(
-                appBar: AppBar(title: const Text('Рейтинг')),
-                body: const Center(
+          final data = snapshot.data?.data() as Map<String, dynamic>? ?? {};
+
+          final int score = data['score'] ?? 1450;
+          final int quizzesDone = data['quizzesCount'] ?? 12;
+          final int cardsStudied = data['cardsCount'] ?? 48;
+          final double accuracy = (data['accuracy'] ?? 0.84) * 100;
+
+          return SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Блок з профілем
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Colors.blueAccent, Colors.indigoAccent],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(24),
+                  ),
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.emoji_events, size: 80, color: Colors.grey),
-                      SizedBox(height: 16),
+                      const CircleAvatar(
+                        radius: 40,
+                        backgroundColor: Colors.white24,
+                        child: Icon(Icons.psychology, size: 50, color: Colors.white),
+                      ),
+                      const SizedBox(height: 12),
                       Text(
-                        'Поки що немає гравців у рейтингу',
-                        style: TextStyle(fontSize: 18, color: Colors.grey),
+                        user?.displayName ?? user?.email?.split('@')[0] ?? 'Студент',
+                        style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Text(
+                          'Рівень 4: Знавець',
+                          style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
+                        ),
                       ),
                     ],
                   ),
                 ),
-              );
-            }
+                const SizedBox(height: 24),
 
-            final topUsers = snapshot.data!;
+                const Text(
+                  'Основні показники',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 12),
 
-            return Scaffold(
-              body: CustomScrollView(
-                slivers: [
-                  SliverAppBar(
-                    expandedHeight: 200,
-                    pinned: true,
-                    flexibleSpace: FlexibleSpaceBar(
-                      title: const Text(
-                        'Рейтинг',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      background: Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              Colors.amber.shade400,
-                              Colors.orange.shade600,
-                            ],
-                          ),
-                        ),
-                        child: const Center(
-                          child: Icon(
-                            Icons.emoji_events,
-                            size: 80,
-                            color: Colors.white70,
-                          ),
-                        ),
-                      ),
+                // Метрики
+                GridView.count(
+                  crossAxisCount: 2,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  childAspectRatio: 1.4,
+                  children: [
+                    _buildStatCard(
+                      title: 'Загальні бали',
+                      value: '$score',
+                      icon: Icons.emoji_events,
+                      color: Colors.orange,
                     ),
-                  ),
-
-                  // Топ-3
-                  if (topUsers.length >= 3)
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          children: [
-                            const Text(
-                              '🏆 Топ гравці',
-                              style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 24),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                _PodiumCard(
-                                  rank: 2,
-                                  name: topUsers[1].displayName,
-                                  score: topUsers[1].totalScore,
-                                  height: 120,
-                                  color: Colors.grey,
-                                ),
-                                const SizedBox(width: 8),
-                                _PodiumCard(
-                                  rank: 1,
-                                  name: topUsers[0].displayName,
-                                  score: topUsers[0].totalScore,
-                                  height: 150,
-                                  color: Colors.amber,
-                                ),
-                                const SizedBox(width: 8),
-                                _PodiumCard(
-                                  rank: 3,
-                                  name: topUsers[2].displayName,
-                                  score: topUsers[2].totalScore,
-                                  height: 100,
-                                  color: Colors.brown.shade400,
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 32),
-                          ],
-                        ),
-                      ),
+                    _buildStatCard(
+                      title: 'Тестів пройдено',
+                      value: '$quizzesDone',
+                      icon: Icons.task_alt,
+                      color: Colors.green,
                     ),
-
-                  // Решта
-                  if (topUsers.length > 3)
-                    SliverPadding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      sliver: SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                              (context, index) {
-                            final user = topUsers[index + 3];
-                            return _LeaderboardTile(
-                              rank: index + 4,
-                              name: user.displayName,
-                              score: user.totalScore,
-                              quizzes: user.quizzesCompleted,
-                            );
-                          },
-                          childCount: topUsers.length - 3,
-                        ),
-                      ),
+                    _buildStatCard(
+                      title: 'Вивчено карток',
+                      value: '$cardsStudied',
+                      icon: Icons.style,
+                      color: Colors.blue,
                     ),
+                    _buildStatCard(
+                      title: 'Точність відповідей',
+                      value: '${accuracy.toStringAsFixed(0)}%',
+                      icon: Icons.track_changes,
+                      color: Colors.purple,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
 
-                  const SliverToBoxAdapter(child: SizedBox(height: 32)),
-                ],
-              ),
-            );
-          },
-        );
-      },
+                const Text(
+                  'Мої досягнення',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 12),
+
+                _buildAchievementTile(
+                  title: 'Перша кров',
+                  subtitle: 'Успішно завершено перший тест без помилок',
+                  icon: Icons.workspace_premium,
+                  color: Colors.amber,
+                  isUnlocked: true,
+                ),
+                _buildAchievementTile(
+                  title: 'Генератор знань',
+                  subtitle: 'Повторено понад 30 флеш-карток за добу',
+                  icon: Icons.bolt,
+                  color: Colors.cyan,
+                  isUnlocked: true,
+                ),
+                _buildAchievementTile(
+                  title: 'Нічний кодер',
+                  subtitle: 'Пройдено тест на тему ООП після 12 години ночі',
+                  icon: Icons.nightlight_round,
+                  color: Colors.indigo,
+                  isUnlocked: quizzesDone >= 5,
+                ),
+                _buildAchievementTile(
+                  title: 'Абсолютний Майстер',
+                  subtitle: 'Набрати 5000 балів у загальному заліку',
+                  icon: Icons.stars,
+                  color: Colors.grey,
+                  isUnlocked: score >= 5000,
+                ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
-}
 
-class _PodiumCard extends StatelessWidget {
-  final int rank;
-  final String name;
-  final int score;
-  final double height;
-  final Color color;
-
-  const _PodiumCard({
-    required this.rank,
-    required this.name,
-    required this.score,
-    required this.height,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final medals = {1: '🥇', 2: '🥈', 3: '🥉'};
-
-    return Column(
-      children: [
-        CircleAvatar(
-          radius: 30,
-          backgroundColor: color.withOpacity(0.2),
-          child: Text(
-            name.substring(0, 1).toUpperCase(),
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          name,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-          overflow: TextOverflow.ellipsis,
-        ),
-        const SizedBox(height: 4),
-        Text(
-          '$score балів',
-          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          width: 100,
-          height: height,
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.3),
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(12),
-            ),
-            border: Border.all(color: color, width: 2),
-          ),
-          child: Center(
-            child: Text(
-              medals[rank]!,
-              style: const TextStyle(fontSize: 40),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _LeaderboardTile extends StatelessWidget {
-  final int rank;
-  final String name;
-  final int score;
-  final int quizzes;
-
-  const _LeaderboardTile({
-    required this.rank,
-    required this.name,
-    required this.score,
-    required this.quizzes,
-  });
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildStatCard({
+    required String title,
+    required String value,
+    required IconData icon,
+    required Color color,
+  }) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primaryContainer,
-            shape: BoxShape.circle,
-          ),
-          child: Center(
-            child: Text(
-              '#$rank',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            ),
-          ),
-        ),
-        title: Text(
-          name,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Text('$quizzes квізів пройдено'),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              '$score',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.primary,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Icon(icon, color: color, size: 28),
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+                )
+              ],
             ),
-            Text(
-              'балів',
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value,
+                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  title,
+                  style: const TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w500),
+                ),
+              ],
+            )
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildAchievementTile({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required bool isUnlocked,
+  }) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 10),
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        leading: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: isUnlocked ? color.withOpacity(0.12) : Colors.grey.withOpacity(0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: isUnlocked ? color : Colors.grey, size: 26),
+        ),
+        title: Text(
+          title,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: isUnlocked ? Colors.black87 : Colors.grey,
+          ),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: const TextStyle(fontSize: 12, color: Colors.grey),
+        ),
+        trailing: isUnlocked
+            ? const Icon(Icons.check_circle, color: Colors.green, size: 20)
+            : const Icon(Icons.lock_outline, color: Colors.grey, size: 20),
       ),
     );
   }

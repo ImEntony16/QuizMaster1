@@ -1,388 +1,373 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:quizmaster/learning/flashcards_screen.dart';
+import 'package:quizmaster/testing/tests_methods_screen.dart';
+import 'package:quizmaster/pages/statistics_screen.dart';
+import 'package:quizmaster/pages/profile_page.dart';// Наш імпорт сторінки профілю
+import 'dart:math';
 
-// екрани, що вже є в проєкті
-import 'package:quizmaster/pages/quiz_list_screen.dart';
-import 'package:quizmaster/pages/leaderboard_page.dart';
-
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
+  State<HomePage> createState() => _HomePageState();
+}
 
+class _HomePageState extends State<HomePage> {
+  final User? user = FirebaseAuth.instance.currentUser;
+  late String _currentQuote;
+
+  final List<String> _quotes = [
+    "«Код — як нестабільна споруда: працює, поки нічого не чіпаєш.»",
+    "«Найкращий спосіб передбачити майбутнє — створити його.» — Пітер Друкер",
+    "«Програмування — це не те, що ви знаєте, а те, що ви можете з'ясувати.»",
+    "«Спочатку виріши задачу. Потім пиши код.» — Джон Джонсон",
+    "«Помилки — це просто доказ того, що ви намагаєтеся.»",
+    "«Два тижні програмування можуть зекономити вам одну годину планування.»"
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _currentQuote = _quotes[Random().nextInt(_quotes.length)];
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Theme.of(context).colorScheme.primaryContainer,
-              Theme.of(context).colorScheme.secondaryContainer,
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // хедер з привітанням
-              Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Вітаю 👋',
-                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
+      backgroundColor: const Color(0xFFF5F4FA),
+      body: StreamBuilder<DocumentSnapshot>(
+        stream: FirebaseFirestore.instance.collection('users').doc(user?.uid).snapshots(),
+        builder: (context, snapshot) {
+          int score = 0;
+          String displayName = user?.email?.split('@')[0] ?? 'Користувач';
+
+          if (snapshot.hasData && snapshot.data!.exists) {
+            final data = snapshot.data!.data() as Map<String, dynamic>?;
+            score = data?['score'] ?? 0;
+            displayName = data?['displayName'] ?? data?['name'] ?? displayName;
+          }
+
+          int currentLevel = (score / 100).floor() + 1;
+          double levelProgress = (score % 100) / 100.0;
+
+          return SafeArea(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // СУЧАСНИЙ ХЕДЕР З МІКРО-ЕФЕКТАМИ
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "ПРОСТІР ЗНАНЬ",
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              color: const Color(0xFF673AB7).withOpacity(0.4),
+                              letterSpacing: 2.0,
+                            ),
                           ),
+                          const SizedBox(height: 4),
+                          Text(
+                            displayName,
+                            style: const TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.w300,
+                              color: Color(0xFF1A1A1A),
+                              letterSpacing: -0.7,
+                            ),
+                          ),
+                        ],
+                      ),
+                      // Кнопка профілю у верхньому правому кутку
+                      GestureDetector(
+                        // ФІКС: Змінено ProfileScreen() на ProfilePage()
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ProfilePage())),
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(18),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF673AB7).withOpacity(0.06),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              )
+                            ],
+                          ),
+                          child: const Icon(Icons.person_outline_rounded, color: Color(0xFF673AB7), size: 24),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          user?.email?.split('@').first ?? 'Користувач',
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 28),
+
+                  // ПРЕМІАЛЬНА КАРТКА ПРОГРЕСУ
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(22),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(28),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF673AB7).withOpacity(0.04),
+                          blurRadius: 24,
+                          offset: const Offset(0, 12),
                         ),
                       ],
                     ),
-                    CircleAvatar(
-                      radius: 28,
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      child: Text(
-                        (user?.email?.substring(0, 1) ?? 'U').toUpperCase(),
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.onPrimary,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // основний контент
-              Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface,
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(32),
-                      topRight: Radius.circular(32),
-                    ),
-                  ),
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(24),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // заголовок
-                        Text(
-                          'Що сьогодні пройдемо?',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-
-                        // 2x2 меню
-                        GridView.count(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 16,
-                          mainAxisSpacing: 16,
+                        Row(
                           children: [
-                            _MenuCard(
-                              icon: Icons.quiz,
-                              title: 'Квізи',
-                              subtitle: 'Вибрати тест',
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFF6C63FF), Color(0xFF5A52D5)],
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF673AB7).withOpacity(0.07),
+                                borderRadius: BorderRadius.circular(14),
                               ),
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (_) => const QuizListScreen()),
-                                );
-                              },
+                              child: const Icon(Icons.auto_awesome_rounded, color: Color(0xFF673AB7), size: 18),
                             ),
-                            _MenuCard(
-                              icon: Icons.create,
-                              title: 'Створити',
-                              subtitle: 'Новий квіз',
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFFFF6B9D), Color(0xFFC86DD7)],
-                              ),
-                              onTap: () {
-                                // TODO: підключимо CreateQuizPage, коли додаси файл
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Створення квізу — скоро 😉')),
-                                );
-                              },
+                            const SizedBox(width: 14),
+                            Text(
+                              "Рівень $currentLevel",
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF1A1A1A)),
                             ),
-                            _MenuCard(
-                              icon: Icons.bar_chart,
-                              title: 'Твій рейтинг',
-                              subtitle: 'Ваші результати',
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFFFFA751), Color(0xFFFFE259)],
+                            const Spacer(),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF673AB7).withOpacity(0.05),
+                                borderRadius: BorderRadius.circular(10),
                               ),
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (_) => const LeaderboardPage()),
-                                );
-                              },
-                            ),
-                            _MenuCard(
-                              icon: Icons.settings,
-                              title: 'Налаштування',
-                              subtitle: 'Профіль',
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFF4FACFE), Color(0xFF00F2FE)],
+                              child: Text(
+                                "$score XP",
+                                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Color(0xFF673AB7)),
                               ),
-                              onTap: () {
-                                _showProfileBottomSheet(context);
-                              },
                             ),
                           ],
                         ),
-
-                        const SizedBox(height: 32),
-
-                        // “популярні квізи” (поки для вигляду)
-                        Text(
-                          'Популярні квізи',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
+                        const SizedBox(height: 20),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: LinearProgressIndicator(
+                            value: levelProgress,
+                            backgroundColor: const Color(0xFFF0EBF7),
+                            color: const Color(0xFF673AB7),
+                            minHeight: 7,
                           ),
                         ),
-                        const SizedBox(height: 16),
-
-                        _PopularQuizCard(
-                          title: 'Випадкові питання',
-                          questions: 10,
-                          icon: Icons.public,
-                          color: Colors.blue,
-                          onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Скоро додамо підбірки 👍')),
-                            );
-                          },
-                        ),
                         const SizedBox(height: 12),
-                        _PopularQuizCard(
-                          title: 'ООП квіз',
-                          questions: 15,
-                          icon: Icons.history_edu,
-                          color: Colors.orange,
-                          onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Скоро додамо запуск конкретного квізу')),
-                            );
-                          },
-                        ),
-                        const SizedBox(height: 12),
-                        _PopularQuizCard(
-                          title: 'Flutter та Dart',
-                          questions: 12,
-                          icon: Icons.code,
-                          color: Colors.purple,
-                          onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Скоро буде!')),
-                            );
-                          },
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text("До рівня ${currentLevel + 1}", style: TextStyle(fontSize: 12, color: Colors.grey[500], fontWeight: FontWeight.w500)),
+                            Text("${(levelProgress * 100).toInt()}%", style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF673AB7))),
+                          ],
                         ),
                       ],
                     ),
                   ),
-                ),
+
+                  const SizedBox(height: 32),
+
+                  // НАЗВА БЛОКУ З КНОПКОЮ ВИХОДУ
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "ГОЛОВНЕ МЕНЮ",
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.black.withOpacity(0.35),
+                          letterSpacing: 1.8,
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () => FirebaseAuth.instance.signOut(),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.red.withOpacity(0.05),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            "ВИЙТИ",
+                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.red[400], letterSpacing: 1),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  // КРАСИВА СІТКА КАРТОК
+                  GridView.count(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                    childAspectRatio: 1.15,
+                    children: [
+                      _buildPremiumBlockCard(
+                        title: "Тести",
+                        subtitle: "Перевірка знань",
+                        icon: Icons.analytics_outlined,
+                        accentColor: Colors.blue[600]!,
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const TestsMethodsScreen())),
+                      ),
+                      _buildPremiumBlockCard(
+                        title: "Картки",
+                        subtitle: "Повторення IT",
+                        icon: Icons.collections_bookmark_outlined,
+                        accentColor: const Color(0xFF00A86B),
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const FlashcardsScreen())),
+                      ),
+                      _buildPremiumBlockCard(
+                        title: "Статистика",
+                        subtitle: "Твої успіхи",
+                        icon: Icons.bubble_chart_outlined,
+                        accentColor: Colors.orange[700]!,
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const StatisticsScreen())),
+                      ),
+                      _buildPremiumBlockCard(
+                        title: "Профіль",
+                        subtitle: "Мій кабінет",
+                        icon: Icons.fingerprint_rounded,
+                        accentColor: const Color(0xFF673AB7),
+                        // ФІКС: Змінено ProfileScreen() на ProfilePage()
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ProfilePage())),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  // КАРТКА ЦИТАТИ
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.015),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        )
+                      ],
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.format_quote_rounded, color: Color(0xFF673AB7), size: 24),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            _currentQuote,
+                            style: TextStyle(
+                              color: Colors.grey[800],
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w400,
+                              fontStyle: FontStyle.italic,
+                              height: 1.5,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }
 
-  void _showProfileBottomSheet(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
+  Widget _buildPremiumBlockCard({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color accentColor,
+    required VoidCallback onTap,
+  }) {
+    final Color cleanAccent = accentColor == const Color(0xFF00A86B) ? const Color(0xFF00A86B) : accentColor;
 
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) => Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // хендл
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
-              ),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF673AB7).withOpacity(0.025),
+              blurRadius: 16,
+              offset: const Offset(0, 8),
             ),
-            const SizedBox(height: 24),
-
-            // аватар
-            CircleAvatar(
-              radius: 40,
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              child: Text(
-                (user?.email?.substring(0, 1) ?? 'U').toUpperCase(),
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.onPrimary,
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            Text(
-              user?.email ?? 'Користувач',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 32),
-
-            // вихід
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () async {
-                  await FirebaseAuth.instance.signOut();
-                  if (context.mounted) {
-                    Navigator.pop(context);
-                  }
-                },
-                icon: const Icon(Icons.logout),
-                label: const Text('Вийти'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  backgroundColor: Colors.red[400],
-                  foregroundColor: Colors.white,
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _MenuCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final Gradient gradient;
-  final VoidCallback onTap;
-
-  const _MenuCard({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.gradient,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 4,
-      shadowColor: Colors.black26,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: gradient,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 48, color: Colors.white),
-              const SizedBox(height: 12),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: cleanAccent.withOpacity(0.09),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(icon, color: cleanAccent, size: 22),
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                subtitle,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.white.withOpacity(0.9),
+                Icon(Icons.arrow_forward_ios_rounded, color: Colors.grey[300], size: 12),
+              ],
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                    color: Color(0xFF1A1A1A),
+                    letterSpacing: -0.3,
+                  ),
                 ),
-              ),
-            ],
-          ),
+                const SizedBox(height: 3),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    color: Colors.grey[500],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
-      ),
-    );
-  }
-}
-
-
-class _PopularQuizCard extends StatelessWidget {
-  final String title;
-  final int questions;
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _PopularQuizCard({
-    required this.title,
-    required this.questions,
-    required this.icon,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 2,
-      child: ListTile(
-        leading: Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(icon, color: color),
-        ),
-        title: Text(
-          title,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Text('$questions питань'),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-        onTap: onTap,
       ),
     );
   }

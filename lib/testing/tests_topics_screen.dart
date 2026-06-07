@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:quizmaster/testing/quiz_data.dart';
-import 'package:quizmaster/testing/quiz_game_screen.dart'; // Додали імпорт гри!
+import 'package:quizmaster/testing/quiz_game_screen.dart';
 
 class TestsTopicsScreen extends StatelessWidget {
   final String methodTitle;
@@ -14,7 +14,6 @@ class TestsTopicsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Беремо список тем безпосередньо з нашого файлу даних
     final topics = QuizData.topicsQuestions.keys.toList();
 
     return Scaffold(
@@ -63,7 +62,6 @@ class TestsTopicsScreen extends StatelessWidget {
                       ),
                       trailing: const Icon(Icons.play_arrow, color: Colors.blueAccent),
                       onTap: () {
-                        // Повністю робочий перехід до самої гри з передачею типу режиму
                         Navigator.push(
                           context,
                           MaterialPageRoute(

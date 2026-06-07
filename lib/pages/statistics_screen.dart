@@ -96,7 +96,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           dynamic createdAt;
 
           if (snapshot.hasData && snapshot.data!.exists) {
-            // ФІКС: Явно кастимо до Map<String, dynamic>, щоб уникнути помилки Null Safety
             final Map<String, dynamic> data = snapshot.data!.data() as Map<String, dynamic>;
 
             score = data['score'] ?? 0;
@@ -242,7 +241,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 ),
                 const SizedBox(height: 12),
 
-                // 3. ПОКАЗНИКИ ТА ЛІЧИЛЬНИКИ
                 _buildPremiumWideCard(
                   title: "Загальний накопичений досвід",
                   value: score,
@@ -292,7 +290,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 ),
                 const SizedBox(height: 28),
 
-                // 4. ГРАФІК АКТИВНОСТІ
                 const Text(
                   "ІНТЕНСИВНІСТЬ НАВЧАННЯ (ЦЬОГО ТИЖНЯ)",
                   style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.black38, letterSpacing: 1.5),

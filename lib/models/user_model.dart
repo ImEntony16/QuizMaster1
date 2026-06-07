@@ -21,7 +21,6 @@ class UserProfile {
     return (totalScore / quizzesCompleted * 100).roundToDouble();
   }
 
-  // Створення з Map (Firestore)
   factory UserProfile.fromMap(Map<String, dynamic> data, String uid) {
     return UserProfile(
       uid: uid,
@@ -35,7 +34,6 @@ class UserProfile {
     );
   }
 
-  // Конвертація в Map для Firestore
   Map<String, dynamic> toMap() {
     return {
       'email': email,

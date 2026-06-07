@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:quizmaster/learning/flashcards_screen.dart';
 import 'package:quizmaster/testing/tests_methods_screen.dart';
 import 'package:quizmaster/pages/statistics_screen.dart';
-import 'package:quizmaster/pages/profile_page.dart';// Наш імпорт сторінки профілю
+import 'package:quizmaster/pages/profile_page.dart';
 import 'dart:math';
 
 class HomePage extends StatefulWidget {
@@ -59,7 +59,6 @@ class _HomePageState extends State<HomePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // СУЧАСНИЙ ХЕДЕР З МІКРО-ЕФЕКТАМИ
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -87,9 +86,8 @@ class _HomePageState extends State<HomePage> {
                           ),
                         ],
                       ),
-                      // Кнопка профілю у верхньому правому кутку
+
                       GestureDetector(
-                        // ФІКС: Змінено ProfileScreen() на ProfilePage()
                         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ProfilePage())),
                         child: Container(
                           padding: const EdgeInsets.all(12),
@@ -112,7 +110,7 @@ class _HomePageState extends State<HomePage> {
 
                   const SizedBox(height: 28),
 
-                  // ПРЕМІАЛЬНА КАРТКА ПРОГРЕСУ
+                  // КАРТКА ПРОГРЕСУ
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(22),
@@ -182,7 +180,6 @@ class _HomePageState extends State<HomePage> {
 
                   const SizedBox(height: 32),
 
-                  // НАЗВА БЛОКУ З КНОПКОЮ ВИХОДУ
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -214,7 +211,6 @@ class _HomePageState extends State<HomePage> {
 
                   const SizedBox(height: 14),
 
-                  // КРАСИВА СІТКА КАРТОК
                   GridView.count(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
@@ -231,7 +227,7 @@ class _HomePageState extends State<HomePage> {
                         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const TestsMethodsScreen())),
                       ),
                       _buildPremiumBlockCard(
-                        title: "Картки",
+                        title: "Навчання",
                         subtitle: "Повторення IT",
                         icon: Icons.collections_bookmark_outlined,
                         accentColor: const Color(0xFF00A86B),
@@ -257,7 +253,7 @@ class _HomePageState extends State<HomePage> {
 
                   const SizedBox(height: 32),
 
-                  // КАРТКА ЦИТАТИ
+
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(20),

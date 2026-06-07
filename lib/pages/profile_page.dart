@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:quizmaster/pages/statistics_screen.dart'; // Наш екран статистики
+import 'package:quizmaster/pages/statistics_screen.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -13,7 +13,7 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   final user = FirebaseAuth.instance.currentUser;
 
-  // Функція для зміни нікнейму через діалогове вікно
+
   void _showChangeNicknameDialog(String currentName) {
     final TextEditingController controller = TextEditingController(text: currentName);
     showDialog(
@@ -38,11 +38,9 @@ class _ProfilePageState extends State<ProfilePage> {
                 final newName = controller.text.trim();
 
                 try {
-                  // 1. Оновлюємо локальний профіль Firebase Auth
                   await user!.updateDisplayName(newName);
                   await user!.reload();
 
-                  // 2. Оновлюємо Firestore (обидва ключі для повної сумісності)
                   await FirebaseFirestore.instance
                       .collection('users')
                       .doc(user!.uid)
@@ -64,7 +62,6 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // Робоча функція зміни пароля через Firebase Auth
   void _resetPassword() async {
     if (user != null && user!.email != null) {
       try {
@@ -100,7 +97,6 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  // Розумна функція форматування дати реєстрації
   String _formatRegistrationDate(Map<String, dynamic> data) {
     final createdAtData = data['createdAt'] ??
         data['date'] ??
@@ -126,14 +122,11 @@ class _ProfilePageState extends State<ProfilePage> {
     return "28 листопада 2025";
   }
 
-  // НАДІЙНА ФУНКЦІЯ ВИХОДУ З АКАУНТА
   void _logout() async {
     try {
-      // 1. Спочатку закриваємо екран профілю, щоб повернутися на HomePage
       if (mounted) {
         Navigator.pop(context);
       }
-      // 2. Виходимо з Firebase. StreamBuilder в main.dart одразу переключить додаток на AuthPage
       await FirebaseAuth.instance.signOut();
     } catch (e) {
       print("Помилка при виході з акаунта: $e");
@@ -175,7 +168,6 @@ class _ProfilePageState extends State<ProfilePage> {
             child: Column(
               children: [
 
-                // 1. АВАТАРКА КОРИСТУВАЧА
                 Center(
                   child: Column(
                     children: [
@@ -224,7 +216,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
                 const SizedBox(height: 32),
 
-                // 2. КАРТКА «ОСОБИСТІ ДАНІ»
                 _buildSectionTitle("ОСОБИСТІ ДАНІ"),
                 Container(
                   width: double.infinity,
@@ -258,7 +249,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
                 const SizedBox(height: 28),
 
-                // 3. БЛОК «ІНСТРУМЕНТИ АКАУНТУ»
+
                 _buildSectionTitle("ІНСТРУМЕНТИ АКАУНТУ"),
                 Container(
                   width: double.infinity,
@@ -281,7 +272,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         child: Divider(height: 1, color: Color(0xFFEEEEEE)),
                       ),
 
-                      // Зміна пароля через Firebase Auth
+                      // Зміна пароля
                       _buildActionItem(
                         icon: Icons.lock_outline_rounded,
                         title: "Змінити пароль акаунта",
@@ -293,7 +284,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         child: Divider(height: 1, color: Color(0xFFEEEEEE)),
                       ),
 
-                      // Статистика навчання (Перехід на StatisticsScreen)
+                      // Статистика навчання
                       _buildActionItem(
                         icon: Icons.bar_chart_rounded,
                         title: "Статистика навчання",
@@ -320,7 +311,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
                 const SizedBox(height: 36),
 
-                // 4. КНОПКА «ВИЙТИ З АКАУНТА»
+
                 Padding(
                   padding: const EdgeInsets.only(bottom: 16.0),
                   child: OutlinedButton.icon(

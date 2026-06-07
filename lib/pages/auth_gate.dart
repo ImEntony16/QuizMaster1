@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:quizmaster/pages/home_page.dart'; // або quiz_list_screen, що в тебе головне
-import 'package:quizmaster/pages/auth_page.dart'; // <-- твій гарний екран
+import 'package:quizmaster/pages/home_page.dart';
+import 'package:quizmaster/pages/auth_page.dart';
 
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key});
@@ -15,11 +15,9 @@ class AuthGate extends StatelessWidget {
           final user = snapshot.data;
 
           if (user == null) {
-            // ПОКАЗУЄМО ТВІЙ КАСТОМНИЙ ЕКРАН
             return const AuthPage();
           } else {
-            // Після логіну/реєстрації — на головну
-            return const HomePage(); // або твій QuizListScreen
+            return const HomePage();
           }
         }
 

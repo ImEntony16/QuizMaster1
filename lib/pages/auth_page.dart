@@ -277,7 +277,7 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
                     ),
                     const SizedBox(height: 24),
 
-                    // Перемикач між входом та реєстрацією
+                    // Перемикач
                     TextButton(
                       onPressed: () {
                         setState(() {

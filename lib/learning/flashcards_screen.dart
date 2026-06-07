@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:quizmaster/learning/learning_topics_screen.dart';
-import 'package:quizmaster/learning/lectures_screen.dart'; // Імпорт 2-го методу
-import 'package:quizmaster/learning/syntax_trainer_screen.dart'; // Імпорт 3-го методу
-import 'package:quizmaster/learning/cheat_sheets_screen.dart'; // Імпорт 4-го методу
+import 'package:quizmaster/learning/lectures_screen.dart';
+import 'package:quizmaster/learning/syntax_trainer_screen.dart';
+import 'package:quizmaster/learning/cheat_sheets_screen.dart';
 
 class FlashcardsScreen extends StatelessWidget {
   const FlashcardsScreen({super.key});
@@ -85,7 +85,7 @@ class FlashcardsScreen extends StatelessWidget {
                     ),
                     trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.black45),
                     onTap: () {
-                      // Логіка переходу залежно від обраного індексу картки методу
+                      // Логіка переходу
                       Widget targetScreen;
                       switch (index) {
                         case 0:

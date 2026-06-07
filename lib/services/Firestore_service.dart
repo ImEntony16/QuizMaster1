@@ -7,7 +7,7 @@ class FirestoreService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // ------------------------- USERS / PROFILE -------------------------
+
 
   // Створити профіль користувача при реєстрації
   Future<void> createUserProfile(User user) async {
@@ -28,7 +28,6 @@ class FirestoreService {
     }
   }
 
-  // Отримати профіль поточного користувача
   Stream<UserProfile?> getCurrentUserProfile() {
     final user = _auth.currentUser;
     if (user == null) return Stream.value(null);
@@ -43,7 +42,6 @@ class FirestoreService {
     });
   }
 
-  // Оновити ім'я користувача
   Future<void> updateDisplayName(String displayName) async {
     final user = _auth.currentUser;
     if (user == null) return;
@@ -53,7 +51,6 @@ class FirestoreService {
     });
   }
 
-  // Оновити статистику після квізу
   Future<void> updateQuizStats(int score, int maxScore) async {
     final user = _auth.currentUser;
     if (user == null) return;
@@ -71,7 +68,6 @@ class FirestoreService {
     });
   }
 
-  // Отримати топ користувачів
   Stream<List<UserProfile>> getTopUsers({int limit = 10}) {
     return _firestore
         .collection('users')
@@ -85,7 +81,6 @@ class FirestoreService {
     });
   }
 
-  // Рейтинг користувача
   Future<int> getUserRank(String uid) async {
     final userDoc = await _firestore.collection('users').doc(uid).get();
     if (!userDoc.exists) return 0;
@@ -100,13 +95,12 @@ class FirestoreService {
     return higherScores.docs.length + 1;
   }
 
-  // ------------------------- DEMO USERS FOR RATING -------------------------
 
-  /// Додати фейкових користувачів для рейтингу (для вигляду)
+
+
   Future<void> seedDummyUsers({int count = 15, int minExisting = 3}) async {
     final usersCol = _firestore.collection('users');
 
-    // Якщо вже є хоча б мінімум — нічого не додаємо
     final existing = await usersCol.limit(minExisting).get();
     if (existing.docs.length >= minExisting) return;
 
@@ -155,7 +149,6 @@ class FirestoreService {
     await batch.commit();
   }
 
-  /// Очистити фейкових юзерів (якщо захочеш прибрати демо-дані)
   Future<void> clearDemoUsers() async {
     final snap = await _firestore
         .collection('users')
@@ -171,7 +164,6 @@ class FirestoreService {
     await batch.commit();
   }
 
-  // ------------------------- QUIZZES -------------------------
 
   Future<void> addQuiz({
     required String title,

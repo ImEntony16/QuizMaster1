@@ -26,22 +26,21 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
   int _scoreEarned = 0;
   int _correctAnswersCount = 0;
 
-  // Нові змінні для логіки перевірки та підсвічування
-  int? _selectedAnswerIndex; // Яку відповідь обрав користувач
-  bool _isAnswered = false; // Чи вже дана відповідь на поточне питання
+  int? _selectedAnswerIndex;
+  bool _isAnswered = false;
 
-  // Для режиму "Спринт"
+
   Timer? _timer;
   int _timeLeft = 60;
 
-  // Для режиму "Іспит"
-  int _lives = 3;
+  //  "Іспит"
+  int _lives = 5;
 
   @override
   void initState() {
     super.initState();
     _questions = List.from(QuizData.topicsQuestions[widget.topicName] ?? []);
-    _questions.shuffle(); // Перемішуємо питання
+    _questions.shuffle();
 
     if (widget.methodType == 'sprint') {
       _startSprintTimer();
@@ -60,7 +59,7 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
   }
 
   void _onAnswerClick(int selectedIndex) {
-    if (_isAnswered) return; // Якщо вже відповіли, ігноруємо повторні кліки
+    if (_isAnswered) return;
 
     final correctAnswer = _questions[_currentIndex]['correctIndex'];
     bool isCorrect = selectedIndex == correctAnswer;
@@ -78,7 +77,7 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
         _correctAnswersCount++;
       } else {
         if (widget.methodType == 'exam') {
-          _lives--; // Знімаємо життя лише в режимі іспиту
+          _lives--;
         }
       }
     });
@@ -86,17 +85,14 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
 
   void _goToNextQuestion() {
     setState(() {
-      // Перевіряємо, чи не закінчилися життя в режимі іспиту
       if (_lives <= 0) {
         _timer?.cancel();
         _finishQuiz(failedExam: true);
         return;
       }
 
-      // Перехід або фініш
       if (_currentIndex < _questions.length - 1) {
         _currentIndex++;
-        // Скидаємо стан для нового питання
         _isAnswered = false;
         _selectedAnswerIndex = null;
       } else {
@@ -110,7 +106,7 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null && !failedExam) {
       try {
-        // Оновлюємо XP та збільшуємо лічильник пройдених тестів на 1 у Firebase
+        // Оновлюємо XP
         await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
           'score': FieldValue.increment(_scoreEarned),
           'testsCount': FieldValue.increment(1), // +1 пройдений тест в статистику
@@ -137,8 +133,8 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.pop(context); // Закрити діалог
-              Navigator.pop(context); // Повернутися до тем
+              Navigator.pop(context);
+              Navigator.pop(context);
             },
             child: const Text('Супер', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           )
@@ -183,7 +179,7 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
             Padding(
               padding: const EdgeInsets.only(right: 16.0),
               child: Row(
-                children: List.generate(3, (index) {
+                children: List.generate(5, (index) {
                   return Icon(
                     index < _lives ? Icons.favorite : Icons.favorite_border,
                     color: Colors.red,
@@ -224,7 +220,7 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
             ),
             const SizedBox(height: 24),
 
-            // Динамічний фідбек (Правильно / Неправильно)
+            //  фідбек (Правильно / Неправильно)
             if (_isAnswered)
               Container(
                 margin: const EdgeInsets.only(bottom: 16),
@@ -257,19 +253,16 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
               child: ListView.builder(
                 itemCount: options.length,
                 itemBuilder: (context, index) {
-                  // Логіка визначення кольору кнопки
                   Color buttonColor = Colors.white;
                   Color textColor = Colors.black87;
                   IconData? rightIcon;
 
                   if (_isAnswered) {
                     if (index == correctAnswerIndex) {
-                      // Правильна відповідь завжди зелена
                       buttonColor = Colors.green[100]!;
                       textColor = Colors.green[900]!;
                       rightIcon = Icons.check;
                     } else if (index == _selectedAnswerIndex) {
-                      // Якщо користувач обрав цю відповідь і вона хибна — вона червона
                       buttonColor = Colors.red[100]!;
                       textColor = Colors.red[900]!;
                       rightIcon = Icons.close;
@@ -312,7 +305,6 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
               ),
             ),
 
-            // Кнопка ДАЛІ (з'являється лише після вибору відповіді)
             if (_isAnswered)
               Padding(
                 padding: const EdgeInsets.only(top: 16.0),

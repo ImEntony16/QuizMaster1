@@ -39,7 +39,7 @@ class _QuizListScreenState extends State<QuizListScreen> {
         batch.set(docRef, {
           'title': title,
           'description': desc,
-          'questions': <Map<String, dynamic>>[], // поки пусто
+          'questions': <Map<String, dynamic>>[],
           'createdAt': FieldValue.serverTimestamp(),
         });
       }

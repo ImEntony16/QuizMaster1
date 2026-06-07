@@ -44,26 +44,23 @@ class MyApp extends StatelessWidget {
         ),
       ),
 
-      // Розумний запуск додатку: перевіряємо чи авторизований користувач
       home: StreamBuilder<User?>(
         stream: FirebaseAuth.instance.authStateChanges(),
         builder: (context, snapshot) {
-          // Поки Firebase перевіряє токен сесії — показуємо індикатор завантаження
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Scaffold(
               body: Center(child: CircularProgressIndicator(color: Colors.deepPurple)),
             );
           }
 
-          // Якщо користувач успішно зайшов в акаунт — відкриваємо головне меню
           if (snapshot.hasData && snapshot.data != null) {
             return const HomePage();
           }
 
-          // Якщо користувач вийшов або не авторизований — показуємо екран логіну
-          return const AuthPage(); // Якщо твій клас називається LoginPage, зміни на const LoginPage()
+          return const AuthPage();
         },
       ),
     );
   }
 }
+
